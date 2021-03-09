@@ -50,6 +50,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -58,6 +60,80 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define VL_XSHUT_R_Pin GPIO_PIN_0
+#define VL_XSHUT_R_GPIO_Port GPIOH
+#define VL_INT_R_Pin GPIO_PIN_1
+#define VL_INT_R_GPIO_Port GPIOH
+#define VL_XSHUT_F_Pin GPIO_PIN_0
+#define VL_XSHUT_F_GPIO_Port GPIOC
+#define VL_INT_F_Pin GPIO_PIN_1
+#define VL_INT_F_GPIO_Port GPIOC
+#define VL_XSHUT_L_Pin GPIO_PIN_2
+#define VL_XSHUT_L_GPIO_Port GPIOC
+#define VL_INT_L_Pin GPIO_PIN_3
+#define VL_INT_L_GPIO_Port GPIOC
+#define V_batt_Pin GPIO_PIN_0
+#define V_batt_GPIO_Port GPIOA
+#define KTIR_1_Pin GPIO_PIN_1
+#define KTIR_1_GPIO_Port GPIOA
+#define KTIR_2_Pin GPIO_PIN_2
+#define KTIR_2_GPIO_Port GPIOA
+#define KTIR_3_Pin GPIO_PIN_3
+#define KTIR_3_GPIO_Port GPIOA
+#define KTIR_4_Pin GPIO_PIN_4
+#define KTIR_4_GPIO_Port GPIOA
+#define SCK_Pin GPIO_PIN_5
+#define SCK_GPIO_Port GPIOA
+#define MISO_Pin GPIO_PIN_6
+#define MISO_GPIO_Port GPIOA
+#define MOSI_Pin GPIO_PIN_7
+#define MOSI_GPIO_Port GPIOA
+#define IMU_DRDY_Pin GPIO_PIN_4
+#define IMU_DRDY_GPIO_Port GPIOC
+#define IMU_INTM_Pin GPIO_PIN_5
+#define IMU_INTM_GPIO_Port GPIOC
+#define IMU_INT1_Pin GPIO_PIN_0
+#define IMU_INT1_GPIO_Port GPIOB
+#define IMU_INT2_Pin GPIO_PIN_1
+#define IMU_INT2_GPIO_Port GPIOB
+#define IMU_DEN_Pin GPIO_PIN_2
+#define IMU_DEN_GPIO_Port GPIOB
+#define IMU_AG_Pin GPIO_PIN_10
+#define IMU_AG_GPIO_Port GPIOB
+#define IMU_M_Pin GPIO_PIN_12
+#define IMU_M_GPIO_Port GPIOB
+#define TX_TO_DEBUG_Pin GPIO_PIN_6
+#define TX_TO_DEBUG_GPIO_Port GPIOC
+#define RX_FROM_DEBUG_Pin GPIO_PIN_7
+#define RX_FROM_DEBUG_GPIO_Port GPIOC
+#define L_IN1_Pin GPIO_PIN_8
+#define L_IN1_GPIO_Port GPIOC
+#define L_IN2_Pin GPIO_PIN_9
+#define L_IN2_GPIO_Port GPIOC
+#define PWM_L_Pin GPIO_PIN_8
+#define PWM_L_GPIO_Port GPIOA
+#define PWM_R_Pin GPIO_PIN_9
+#define PWM_R_GPIO_Port GPIOA
+#define R_IN2_Pin GPIO_PIN_10
+#define R_IN2_GPIO_Port GPIOA
+#define R_IN1_Pin GPIO_PIN_11
+#define R_IN1_GPIO_Port GPIOA
+#define SYS_SWDIO_Pin GPIO_PIN_13
+#define SYS_SWDIO_GPIO_Port GPIOA
+#define SYS_SWCLK_Pin GPIO_PIN_14
+#define SYS_SWCLK_GPIO_Port GPIOA
+#define BT_EN_Pin GPIO_PIN_4
+#define BT_EN_GPIO_Port GPIOB
+#define BT_State_Pin GPIO_PIN_5
+#define BT_State_GPIO_Port GPIOB
+#define TX_TO_BT_Pin GPIO_PIN_6
+#define TX_TO_BT_GPIO_Port GPIOB
+#define RX_FROM_BT_Pin GPIO_PIN_7
+#define RX_FROM_BT_GPIO_Port GPIOB
+#define SCL_Pin GPIO_PIN_8
+#define SCL_GPIO_Port GPIOB
+#define SDA_Pin GPIO_PIN_9
+#define SDA_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
