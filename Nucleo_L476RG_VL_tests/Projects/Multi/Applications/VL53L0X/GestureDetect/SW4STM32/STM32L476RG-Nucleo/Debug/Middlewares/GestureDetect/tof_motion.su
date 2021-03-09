@@ -1,0 +1,2 @@
+tof_motion.c:38:5:tof_initMotion	16	static
+tof_motion.c:48:5:tof_getMotion	32	static

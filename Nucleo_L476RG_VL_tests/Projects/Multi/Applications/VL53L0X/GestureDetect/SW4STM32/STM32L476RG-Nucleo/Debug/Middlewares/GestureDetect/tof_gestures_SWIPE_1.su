@@ -1,0 +1,2 @@
+tof_gestures_SWIPE_1.c:39:5:tof_gestures_initSWIPE_1	24	static
+tof_gestures_SWIPE_1.c:49:5:tof_gestures_detectSWIPE_1	32	static

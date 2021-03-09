@@ -1,0 +1,9 @@
+ring_buffer.c:41:5:RB_init	16	static
+ring_buffer.c:51:5:RB_push	16	static
+ring_buffer.c:73:5:RB_pop	24	static
+ring_buffer.c:87:6:RB_full	16	static
+ring_buffer.c:92:6:RB_trace	24	static
+ring_buffer.c:108:5:RB_sum	32	static
+ring_buffer.c:124:5:RB_mean	16	static
+ring_buffer.c:129:5:RB_mad	40	static
+ring_buffer.c:150:5:RB_dir	40	static

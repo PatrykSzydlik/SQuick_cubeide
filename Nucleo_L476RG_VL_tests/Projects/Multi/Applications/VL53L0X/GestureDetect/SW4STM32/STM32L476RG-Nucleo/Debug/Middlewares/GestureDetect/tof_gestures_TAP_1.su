@@ -1,0 +1,2 @@
+tof_gestures_TAP_1.c:39:5:tof_gestures_initTAP_1	24	static
+tof_gestures_TAP_1.c:51:5:tof_gestures_detectTAP_1	48	static

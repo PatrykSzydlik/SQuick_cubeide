@@ -1,0 +1,17 @@
+main.c:155:5:BSP_GetPushButton	16	static
+main.c:171:5:PusbButton_WaitUnPress	16	static
+main.c:183:6:VL53L0A1_EXTI_Callback	16	static
+main.c:201:6:HandleError	32	static
+main.c:215:6:MX_TIM5_Init	48	static
+main.c:240:6:TimeStamp_Init	8	static
+main.c:244:6:TimeStamp_Reset	8	static
+main.c:249:10:TimeStamp_Get	4	static
+main.c:259:5:DetectSensors	40	static
+main.c:338:6:SetupSingleShot	32	static
+main.c:378:6:FormatDirSwipe	32	static
+main.c:389:6:Sensor_SetNewRange	16	static
+main.c:407:5:ResetAndDetectSensor	24	static
+main.c:420:5:main	360	static
+main.c:767:6:SystemClock_Config	240	static
+main.c:822:6:MX_GPIO_Init	48	static
+main.c:859:6:debug_stuff	16	static
