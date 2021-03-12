@@ -60,18 +60,24 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define VL_XSHUT_R_Pin GPIO_PIN_0
-#define VL_XSHUT_R_GPIO_Port GPIOH
-#define VL_INT_R_Pin GPIO_PIN_1
-#define VL_INT_R_GPIO_Port GPIOH
-#define VL_XSHUT_F_Pin GPIO_PIN_0
-#define VL_XSHUT_F_GPIO_Port GPIOC
+#define PT_A_Pin GPIO_PIN_13
+#define PT_A_GPIO_Port GPIOC
+#define PT_B_Pin GPIO_PIN_14
+#define PT_B_GPIO_Port GPIOC
+#define PT_C_Pin GPIO_PIN_15
+#define PT_C_GPIO_Port GPIOC
+#define PT_MEAS_Pin GPIO_PIN_0
+#define PT_MEAS_GPIO_Port GPIOH
+#define BUT_1_Pin GPIO_PIN_1
+#define BUT_1_GPIO_Port GPIOH
+#define VL_INT_R_Pin GPIO_PIN_0
+#define VL_INT_R_GPIO_Port GPIOC
 #define VL_INT_F_Pin GPIO_PIN_1
 #define VL_INT_F_GPIO_Port GPIOC
-#define VL_XSHUT_L_Pin GPIO_PIN_2
-#define VL_XSHUT_L_GPIO_Port GPIOC
-#define VL_INT_L_Pin GPIO_PIN_3
+#define VL_INT_L_Pin GPIO_PIN_2
 #define VL_INT_L_GPIO_Port GPIOC
+#define VL_XSHUT_Pin GPIO_PIN_3
+#define VL_XSHUT_GPIO_Port GPIOC
 #define V_batt_Pin GPIO_PIN_0
 #define V_batt_GPIO_Port GPIOA
 #define KTIR_1_Pin GPIO_PIN_1
@@ -102,6 +108,12 @@ void Error_Handler(void);
 #define IMU_AG_GPIO_Port GPIOB
 #define IMU_M_Pin GPIO_PIN_12
 #define IMU_M_GPIO_Port GPIOB
+#define IR_C_Pin GPIO_PIN_13
+#define IR_C_GPIO_Port GPIOB
+#define IR_B_Pin GPIO_PIN_14
+#define IR_B_GPIO_Port GPIOB
+#define IR_A_Pin GPIO_PIN_15
+#define IR_A_GPIO_Port GPIOB
 #define TX_TO_DEBUG_Pin GPIO_PIN_6
 #define TX_TO_DEBUG_GPIO_Port GPIOC
 #define RX_FROM_DEBUG_Pin GPIO_PIN_7
@@ -118,10 +130,18 @@ void Error_Handler(void);
 #define R_IN2_GPIO_Port GPIOA
 #define R_IN1_Pin GPIO_PIN_11
 #define R_IN1_GPIO_Port GPIOA
+#define BUT_2_Pin GPIO_PIN_12
+#define BUT_2_GPIO_Port GPIOA
 #define SYS_SWDIO_Pin GPIO_PIN_13
 #define SYS_SWDIO_GPIO_Port GPIOA
 #define SYS_SWCLK_Pin GPIO_PIN_14
 #define SYS_SWCLK_GPIO_Port GPIOA
+#define LED_3_Pin GPIO_PIN_10
+#define LED_3_GPIO_Port GPIOC
+#define LED_2_Pin GPIO_PIN_11
+#define LED_2_GPIO_Port GPIOC
+#define LED_1_Pin GPIO_PIN_12
+#define LED_1_GPIO_Port GPIOC
 #define BT_EN_Pin GPIO_PIN_4
 #define BT_EN_GPIO_Port GPIOB
 #define BT_State_Pin GPIO_PIN_5
