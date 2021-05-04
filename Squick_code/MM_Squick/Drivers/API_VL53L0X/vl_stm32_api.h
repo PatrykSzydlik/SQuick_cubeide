@@ -15,7 +15,7 @@
 typedef enum{
 	HIGH_SPEED_MODE=0,
 	HIGH_ACCURACY_MODE,
-	//LONG_RANGE_MODE,
+	LONG_RANGE_MODE,
 }RangingModeConfig;
 
 

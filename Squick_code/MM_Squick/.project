@@ -3,6 +3,7 @@
 	<name>MM_Squick</name>
 	<comment></comment>
 	<projects>
+		<project>MM_Squick</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

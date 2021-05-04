@@ -30,10 +30,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
+//#include <windows.h>
 #include <time.h>
 #include "SERIAL_COMMS.h"
-//#include "comms_platform.h"
+#include "comms_platform.h"
 
 #include "vl53l0x_platform_log.h"
 

@@ -71,8 +71,11 @@ all: main-build
 # Main-build Target
 main-build: MM_Squick.elf secondary-outputs
 
+dependents:
+	-cd C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release && $(MAKE) clean all
+
 # Tool invocations
-MM_Squick.elf: $(OBJS) $(USER_OBJS) C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld
+MM_Squick.elf: $(OBJS) $(USER_OBJS) C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release/MM_Squick.elf C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld
 	arm-none-eabi-g++ -o "MM_Squick.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MM_Squick.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
@@ -108,5 +111,6 @@ warn-no-linker-script-specified:
 
 .PHONY: all clean dependents fail-specified-linker-script-missing warn-no-linker-script-specified
 .SECONDARY:
+C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release/MM_Squick.elf:
 
 -include ../makefile.targets
