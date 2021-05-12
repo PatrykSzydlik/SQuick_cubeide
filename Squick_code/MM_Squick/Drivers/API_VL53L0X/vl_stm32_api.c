@@ -8,6 +8,121 @@
 #include "vl_stm32_api.h"
 
 
+
+uint8_t VL_init_parameters(VL53L0X_Dev_t *dev, RangingConfig_e rangingConfig,VL53L0X_DeviceModes mode)
+{
+	int status;
+	uint8_t VhvSettings;
+	uint8_t PhaseCal;
+	uint32_t refSpadCount;
+	uint8_t isApertureSpads;
+	FixPoint1616_t signalLimit = (FixPoint1616_t) (1 * 65536);
+	FixPoint1616_t sigmaLimit = (FixPoint1616_t) (50 * 65536);
+	uint32_t timingBudget = 33000;
+	uint8_t preRangeVcselPeriod = 14;
+	uint8_t finalRangeVcselPeriod = 10;
+
+	status = VL53L0X_StaticInit(dev);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_PerformRefCalibration(dev, &VhvSettings,
+			&PhaseCal);
+	if (status) {
+		return status;
+	}
+
+
+
+	status = VL53L0X_PerformRefSpadManagement(dev, &refSpadCount,
+			&isApertureSpads);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetDeviceMode(dev, mode);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetLimitCheckEnable(dev,
+	VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1); // Enable Sigma limit
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetLimitCheckEnable(dev,
+	VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1); // Enable Signa limit
+	if (status) {
+		return status;
+	}
+	/* Ranging configuration */
+	switch (rangingConfig) {
+	case LONG_RANGE:
+		signalLimit = (FixPoint1616_t) (0.1 * 65536);
+		sigmaLimit = (FixPoint1616_t) (60 * 65536);
+		timingBudget = 33000;
+		preRangeVcselPeriod = 18;
+		finalRangeVcselPeriod = 14;
+		break;
+	case HIGH_ACCURACY:
+		signalLimit = (FixPoint1616_t) (0.25 * 65536);
+		sigmaLimit = (FixPoint1616_t) (18 * 65536);
+		timingBudget = 200000;
+		preRangeVcselPeriod = 14;
+		finalRangeVcselPeriod = 10;
+		break;
+	case HIGH_SPEED:
+		signalLimit = (FixPoint1616_t) (1 * 65536);
+		sigmaLimit = (FixPoint1616_t) (50 * 65536);
+		timingBudget = 20000;
+		preRangeVcselPeriod = 14;
+		finalRangeVcselPeriod = 10;
+		break;
+	default:
+		return status;
+	}
+
+	status = VL53L0X_SetLimitCheckValue(dev,
+	VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, signalLimit);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetLimitCheckValue(dev,
+	VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, sigmaLimit);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(dev,
+			timingBudget);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetVcselPulsePeriod(dev,
+	VL53L0X_VCSEL_PERIOD_PRE_RANGE, preRangeVcselPeriod);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_SetVcselPulsePeriod(dev,
+	VL53L0X_VCSEL_PERIOD_FINAL_RANGE, finalRangeVcselPeriod);
+	if (status) {
+		return status;
+	}
+
+	status = VL53L0X_PerformRefCalibration(dev, &VhvSettings,
+			&PhaseCal);
+	if (status) {
+		return status;
+	}
+return 0;
+}
+
+
 uint8_t VL_set_interrupt(VL53L0X_DEV dev, uint8_t state, VL53L0X_InterruptPolarity polarity)
 {
 	if(state) // 0 - wyłączone przerwania / 1 - włączone przerwania

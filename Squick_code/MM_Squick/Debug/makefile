@@ -72,7 +72,7 @@ all: main-build
 main-build: MM_Squick.elf secondary-outputs
 
 dependents:
-	-cd C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release && $(MAKE) clean all
+	-cd C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release && $(MAKE) all
 
 # Tool invocations
 MM_Squick.elf: $(OBJS) $(USER_OBJS) C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Squick_code/MM_Squick/Release/MM_Squick.elf C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld

@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright © 2016, STMicroelectronics International N.V.
+Copyright ï¿½ 2016, STMicroelectronics International N.V.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -88,7 +88,7 @@ extern "C" {
 
 
 #include "vl53l0x_device.h"
-#include "vl53l0x_types.h"
+#include "../../platform/Inc/vl53l0x_types.h"
 
 
 /****************************************

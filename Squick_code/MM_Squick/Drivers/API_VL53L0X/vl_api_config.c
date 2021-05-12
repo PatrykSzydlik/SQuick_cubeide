@@ -5,7 +5,7 @@
  *      Author: Piotr
  */
 
-#include <vl_api_config.h>
+#include "vl_api_config.h"
 
 /* Odczekanie czasu w ms */
 void vl_api_delay(uint16_t time_ms){

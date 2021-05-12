@@ -8,7 +8,7 @@
 #ifndef API_VL53L0X_VL_STM32_API_H_
 #define API_VL53L0X_VL_STM32_API_H_
 
-#include "vl53l0x_api.h"
+#include "core/Inc/vl53l0x_api.h"
 
 
 /* Tryb pracy czujników */

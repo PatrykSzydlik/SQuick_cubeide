@@ -26,12 +26,13 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include "vl53l0x_api.h"
-#include "vl53l0x_tuning.h"
-#include "vl53l0x_interrupt_threshold_settings.h"
-#include "vl53l0x_api_core.h"
-#include "vl53l0x_api_calibration.h"
-#include "vl53l0x_api_strings.h"
+#include "../Inc/vl53l0x_api.h"
+
+#include "../Inc/vl53l0x_api_calibration.h"
+#include "../Inc/vl53l0x_api_core.h"
+#include "../Inc/vl53l0x_api_strings.h"
+#include "../Inc/vl53l0x_interrupt_threshold_settings.h"
+#include "../Inc/vl53l0x_tuning.h"
 
 #ifndef __KERNEL__
 #include <stdlib.h>

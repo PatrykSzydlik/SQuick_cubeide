@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright © 2015, STMicroelectronics International N.V.
+Copyright ï¿½ 2015, STMicroelectronics International N.V.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _VL53L0X_PLATFORM_H_
 #define _VL53L0X_PLATFORM_H_
 
-#include "vl53l0x_def.h"
-#include "vl53l0x_platform_log.h"
+#include "../../core/Inc/vl53l0x_def.h"
 #include "vl53l0x_i2c_platform.h"
+#include "vl53l0x_platform_log.h"
 
 #ifdef __cplusplus
 extern "C" {
