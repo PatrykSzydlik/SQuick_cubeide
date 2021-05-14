@@ -1,0 +1,7 @@
+vl_stm32_api.c:20:9:VL_init_sensor_setAddres	24	static
+vl_stm32_api.c:36:9:VL_set_interrupt	24	static
+vl_stm32_api.c:48:9:VL_init_parameters	48	static
+vl_stm32_api.c:137:9:VL_get_measurement	48	static
+vl_stm32_api.c:154:9:VL_stop_measurment	16	static
+vl_stm32_api.c:160:9:VL_single_measurement_blocking	48	static
+vl_stm32_api.c:177:9:VL_get_measurement_if_ready	48	static
