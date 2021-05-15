@@ -1,5 +1,5 @@
 src/stm32l4xx_it.o: \
- C:/Users/patry/Desktop/MM\ Squick/squick_cubeide/Nucleo_L476RG_VL_tests/en.X-CUBE-53L0A1/X-CUBE-53L0A1/STM32CubeExpansion_VL53L0X_V1.2.0/Projects/Multi/Examples/VL53L0X/RangingWithSatellites/Src/stm32l4xx_it.c \
+ C:/Users/Piotr/Desktop/6sem/Squick/squick_cubeide/Nucleo_L476RG_VL_tests/Projects/Multi/Examples/VL53L0X/RangingWithSatellites/Src/stm32l4xx_it.c \
  ../../../Inc/stm32l4xx_it.h \
  ../../../../../../../../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../../../Inc/stm32l4xx_hal_conf.h \
