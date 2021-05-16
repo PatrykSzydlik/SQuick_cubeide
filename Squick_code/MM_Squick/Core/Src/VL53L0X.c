@@ -9,7 +9,6 @@
 #include "VL53L0X.h"
 
 
-
 volatile uint8_t VL_Data_Ready[3] = {0,0,0};
 
 
@@ -46,7 +45,7 @@ uint8_t VL_Init_All(){
 	{
 		VL_List[j].Device = &devs[j];
 		VL_List[j].Device->I2cDevAddr = VL_DEFAULT_ADDRESS;
-		//VL_List[j].Device->i2c_handle = &hi2c1;
+		VL_List[j].Device->i2c_handle = &hi2c3;
 		VL_List[j].ID = j;
 
 		VLS.MEMORY[j] = -1;
@@ -121,8 +120,8 @@ void f_SH_ClearMemory(int16_t* MEM)
 /* NO WALLS */
 uint8_t sNone(int16_t* MEM)
 {	if(MEM[0]==-1 && MEM[1]==-1 && MEM[2]==-1)
-	{	return 1;	}
-return 0;
+		{	return 1;	}
+	return 0;
 
 }
 

@@ -11,6 +11,8 @@
 
 #include "vl_stm32_api.h"
 #include "main.h"
+//#include "gpio.h"
+#include "i2c.h"
 
 #define VL_DEFAULT_ADDRESS 0x52
 #define VL_DEV_NUMBER 3

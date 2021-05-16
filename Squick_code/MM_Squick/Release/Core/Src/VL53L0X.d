@@ -37,7 +37,7 @@ Core/Src/VL53L0X.o: ../Core/Src/VL53L0X.c ../Core/Inc/VL53L0X.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/vl53l0x_api_strings.h ../Core/Inc/main.h
+ ../Core/Inc/vl53l0x_api_strings.h ../Core/Inc/main.h ../Core/Inc/i2c.h
 
 ../Core/Inc/VL53L0X.h:
 
@@ -128,3 +128,5 @@ Core/Src/VL53L0X.o: ../Core/Src/VL53L0X.c ../Core/Inc/VL53L0X.h \
 ../Core/Inc/vl53l0x_api_strings.h:
 
 ../Core/Inc/main.h:
+
+../Core/Inc/i2c.h:
