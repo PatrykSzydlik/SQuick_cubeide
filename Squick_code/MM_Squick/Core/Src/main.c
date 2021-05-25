@@ -115,18 +115,57 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-}
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+   // HAL_TIM_Base_Start_IT(&htim10);
+
+    HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, GPIO_PIN_SET);
+
+    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
+   /* USER CODE END 2 */
+
+
+   /* Infinite loop */
+   /* USER CODE BEGIN WHILE */
+   while (1)
+   {
+ 	  /* TEST SILNIKÓW */
+ 	  if(HAL_GPIO_ReadPin(BUT_1_GPIO_Port, BUT_1_Pin) == GPIO_PIN_RESET)
+ 	  {
+ 		  HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
+ 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 998);
+ 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 998);
+ 	  } else {
+ 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+ 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+ 		 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
+ 	  }
+
+
+ 	  /* TEST LEDÓW */
+ 	  /*
+ 	  HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+ 	  HAL_Delay(100);
+ 	  HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+ 	  HAL_Delay(100);
+ 	  HAL_GPIO_TogglePin(LED_3_GPIO_Port, LED_3_Pin);
+ 	  HAL_Delay(100);
+ 	  */
+     /* USER CODE END WHILE */
+
+     /* USER CODE BEGIN 3 */
+   }
+   /* USER CODE END 3 */
+ }
+
 
 /**
   * @brief System Clock Configuration
