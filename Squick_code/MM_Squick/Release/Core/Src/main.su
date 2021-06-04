@@ -1,3 +1,12 @@
-main.c:135:6:SystemClock_Config	96	static
-main.c:84:5:main	120	static
-main.c:595:6:Error_Handler	0	static
+main.c:92:5:_write	8	static
+main.c:97:6:data_decrypt	0	static
+main.c:116:6:data_encrypt	0	static
+main.c:135:6:HAL_UART_TxCpltCallback	0	static
+main.c:143:6:HAL_UART_ErrorCallback	0	static,ignoring_inline_asm
+main.c:147:6:HAL_UART_RxCpltCallback	8	static
+main.c:186:6:HAL_GPIO_EXTI_Callback	8	static
+main.c:200:5:abs	0	static
+main.c:207:6:PWM	16	static
+main.c:339:6:SystemClock_Config	96	static
+main.c:252:5:main	128	static
+main.c:859:6:Error_Handler	0	static

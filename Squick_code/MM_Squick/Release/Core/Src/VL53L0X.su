@@ -1,4 +1,3 @@
-VL53L0X.c:15:6:HAL_GPIO_EXTI_Callback	0	static
 VL53L0X.c:39:9:VL_Init_All	24	static
 VL53L0X.c:65:9:VL_Check	24	static
 VL53L0X.c:103:6:f_SH_ClearMemory	0	static

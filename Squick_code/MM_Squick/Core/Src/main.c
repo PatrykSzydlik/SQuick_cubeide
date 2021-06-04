@@ -32,6 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define MOTOR_MAX 999
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,12 +50,30 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
+int pwm_value=0;
 
+
+int rozpocznij_pomiar=0;
+int prog=0;
+uint32_t pomiar[10];
+
+int debug=0;
+uint16_t Kp = 6, Kd = 5, Ki=3, Ni=10;
+uint16_t predkosc_zadana = 0;
+uint16_t zasilanie=0;
+
+uint8_t bt_data;
+uint8_t bt_settings[14];
+int transmission_request=0;
+
+uint8_t direction=0;
+volatile uint8_t rx_flag=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,7 +87,156 @@ static void MX_TIM1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+int _write(int file, uint8_t *ptr, int len){
+	HAL_UART_Transmit(&huart1, ptr, len, 100);
+	return  len;
+};
+
+void data_decrypt(){
+	if(bt_settings[0]==101){
+		prog=(pomiar[5]+pomiar[9])/2;
+		rozpocznij_pomiar=1;
+	}else{
+		rozpocznij_pomiar=0;
+	};
+	if(bt_settings[2]==101){
+		debug=1;
+	}else{
+		debug=0;
+	};
+	predkosc_zadana=256*bt_settings[5]+bt_settings[4];
+	Kp=256*bt_settings[7]+bt_settings[6];
+	Ki=256*bt_settings[9]+bt_settings[8];
+	Ni=256*bt_settings[11]+bt_settings[10];
+	Kd=256*bt_settings[13]+bt_settings[12];
+}
+
+void data_encrypt(){
+
+	bt_settings[0]=debug%256;
+	bt_settings[1]=debug/256;
+	bt_settings[2]=predkosc_zadana%256;
+	bt_settings[3]=predkosc_zadana/256;
+	bt_settings[4]=Kp%256;
+	bt_settings[5]=Kp/256;
+	bt_settings[6]=Ki%256;
+	bt_settings[7]=Ki/256;
+	bt_settings[8]=Ni%256;
+	bt_settings[9]=Ni/256;
+	bt_settings[10]=Kd%256;
+	bt_settings[11]=Kd/256;
+	bt_settings[12]=zasilanie%256;
+	bt_settings[13]=zasilanie/256;
+
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+
+	transmission_request=0;
+	bt_data=0;
+	//HAL_UART_Receive_IT(&huart1, &bt_data, 1);
+
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
+	__NOP();
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+
+
+	if(huart->Instance==USART1){
+//		if(transmission_request==100){ 					// SET PARAMETERS
+//			data_decrypt();
+//			transmission_request=0;
+//			bt_data=0;
+//			HAL_UART_Receive_IT(&huart1, &bt_data, 1);
+//		}else{											// UNRECOGNIZED OR ZERO
+//			transmission_request=bt_data;
+//			if(bt_data==100){
+//				HAL_UART_Receive_IT(&huart1, bt_settings, 14);
+//			}else if(bt_data==101){
+//				data_encrypt();
+//				HAL_UART_Transmit_IT(&huart1, bt_settings, 14);
+//			}else{
+//				HAL_UART_Receive_IT(&huart1, &bt_data, 1);
+//			};
+//		};
+		rx_flag=1;
+		if(bt_data=='w'){
+			direction='w';
+		}
+		if(bt_data=='s'){
+			direction='s';
+		}
+		if(bt_data=='a'){
+			direction='a';
+		}
+		if(bt_data=='d'){
+			direction='d';
+		}
+		printf("Received : %d \r\n", bt_data);
+		HAL_UART_Receive_IT(&huart1, &bt_data, 1);
+	};
+
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if(GPIO_Pin==BUT_2_Pin){
+		HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+		pwm_value-=50;
+		printf("Kliknieto BUT_2  PWM = %d \r\n", pwm_value);
+	}
+
+	if(GPIO_Pin==BUT_1_Pin){
+		HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+		pwm_value+=50;
+		printf("Kliknieto BUT_1  PWM = %d \r\n", pwm_value);
+	}
+}
+
+int abs(int zmienna) {
+	if (zmienna < 0) {
+		zmienna = -zmienna;
+	};
+	return zmienna;
+}
+
+void PWM(int lewy, int prawy) {
+	if (lewy >= 0) {
+		if (lewy > 999) {
+			lewy = 999;
+		};
+		HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 1);
+		HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 0);
+	} else if (lewy < 0) {
+		if (lewy < -999) {
+			lewy = -999;
+		};
+		HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 0);
+		HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 1);
+	};
+
+	if (prawy >= 0) {
+		if (prawy > 999) {
+			prawy = 999;
+		};
+		HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 0);
+		HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 1);
+	} else if (prawy < 0) {
+		if (prawy < -999) {
+			prawy = -999;
+		};
+		HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 1);
+		HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 0);
+	};
+
+	printf("Speeding left: %d  right: %d \r\n", lewy, prawy);
+	__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1, abs(lewy));
+	__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_2, abs(prawy));
+}
 
 /* USER CODE END PFP */
 
@@ -113,8 +281,20 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
+  __HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1, 0 );
+  __HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_2, 0 );
+  HAL_TIM_PWM_Start(&htim1 , TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1 , TIM_CHANNEL_2);
+  HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
+  HAL_UART_Receive_IT(&huart1, &bt_data, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -124,6 +304,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if(rx_flag==1){
+		  switch(direction){
+		  case 'w':
+			  printf("WHY??\r\n");
+			  PWM(600,600);
+			  break;
+		  case 'a':
+			  printf("WHY THO???\r\n");
+			  PWM(-600,600);
+			  break;
+		  case 's':
+			  printf("WUT?!\r\n");
+			  PWM(-600,-600);
+			  break;
+		  case 'd':
+			  printf("JUST WHY?\r\n");
+			  PWM(600,-600);
+			  break;
+		  }
+		  HAL_Delay(300);
+		  printf("Stopping\r\n");
+		  PWM(0,0);
+		  rx_flag=0;
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -315,7 +519,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 4;
+  htim1.Init.Prescaler = 48;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -369,7 +573,7 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
-  //HAL_TIM_MspPostInit(&htim1);  // ERROR
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -385,24 +589,28 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 96;
+  htim2.Init.Prescaler = 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 9999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 15;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 15;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -415,6 +623,55 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -434,7 +691,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -518,7 +775,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, PT_A_Pin|PT_B_Pin|PT_C_Pin|VL_XSHUT_Pin
-                          |L_IN1_Pin|L_IN2_Pin|BT_EN_Pin|IMU_CS_Pin, GPIO_PIN_RESET);
+                          |L_IN1_Pin|L_IN2_Pin|IMU_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED_3_Pin|LED_2_Pin|LED_1_Pin|IR_C_Pin
@@ -528,9 +785,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, R_IN2_Pin|R_IN1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PT_A_Pin PT_B_Pin PT_C_Pin VL_XSHUT_Pin
-                           L_IN1_Pin L_IN2_Pin BT_EN_Pin IMU_CS_Pin */
+                           L_IN1_Pin L_IN2_Pin IMU_CS_Pin */
   GPIO_InitStruct.Pin = PT_A_Pin|PT_B_Pin|PT_C_Pin|VL_XSHUT_Pin
-                          |L_IN1_Pin|L_IN2_Pin|BT_EN_Pin|IMU_CS_Pin;
+                          |L_IN1_Pin|L_IN2_Pin|IMU_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -538,26 +795,31 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : BUT_1_Pin */
   GPIO_InitStruct.Pin = BUT_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BUT_1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : VL_INT_R_Pin VL_INT_F_Pin */
-  GPIO_InitStruct.Pin = VL_INT_R_Pin|VL_INT_F_Pin;
+  /*Configure GPIO pin : VL_INT_R_Pin */
+  GPIO_InitStruct.Pin = VL_INT_R_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(VL_INT_R_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : VL_INT_L_Pin BT_State_Pin */
-  GPIO_InitStruct.Pin = VL_INT_L_Pin|BT_State_Pin;
+  /*Configure GPIO pin : VL_INT_L_Pin */
+  GPIO_InitStruct.Pin = VL_INT_L_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(VL_INT_L_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_3_Pin LED_2_Pin LED_1_Pin IR_C_Pin
-                           IR_B_Pin IR_A_Pin */
-  GPIO_InitStruct.Pin = LED_3_Pin|LED_2_Pin|LED_1_Pin|IR_C_Pin
-                          |IR_B_Pin|IR_A_Pin;
+  /*Configure GPIO pins : LED_3_Pin LED_2_Pin LED_1_Pin */
+  GPIO_InitStruct.Pin = LED_3_Pin|LED_2_Pin|LED_1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : IR_C_Pin IR_B_Pin IR_A_Pin */
+  GPIO_InitStruct.Pin = IR_C_Pin|IR_B_Pin|IR_A_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -572,7 +834,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : BUT_2_Pin */
   GPIO_InitStruct.Pin = BUT_2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BUT_2_GPIO_Port, &GPIO_InitStruct);
 
@@ -581,6 +843,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(IMU_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 

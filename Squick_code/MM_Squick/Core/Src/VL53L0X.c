@@ -11,7 +11,7 @@
 
 volatile uint8_t VL_Data_Ready[3] = {0,0,0};
 
-
+/* PATRYK USUNAL
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == VL_INT_L_Pin){  // left sensor
@@ -27,7 +27,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 } // L, F, R
-
+*/
 
 
 VL53L0X_Dev_t devs[VL_DEV_NUMBER];
