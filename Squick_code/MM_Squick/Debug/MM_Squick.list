@@ -7727,6 +7727,24 @@ HAL_StatusTypeDef HAL_I2C_Init(I2C_HandleTypeDef *hi2c)
  8002e3a:	f422 4200 	bic.w	r2, r2, #32768	; 0x8000
  8002e3e:	601a      	str	r2, [r3, #0]
 
+  /*Reset I2C*/
+  hi2c->Instance->CR1 |= I2C_CR1_SWRST;
+ 8001fb8:	687b      	ldr	r3, [r7, #4]
+ 8001fba:	681b      	ldr	r3, [r3, #0]
+ 8001fbc:	681a      	ldr	r2, [r3, #0]
+ 8001fbe:	687b      	ldr	r3, [r7, #4]
+ 8001fc0:	681b      	ldr	r3, [r3, #0]
+ 8001fc2:	f442 4200 	orr.w	r2, r2, #32768	; 0x8000
+ 8001fc6:	601a      	str	r2, [r3, #0]
+  hi2c->Instance->CR1 &= ~I2C_CR1_SWRST;
+ 8001fc8:	687b      	ldr	r3, [r7, #4]
+ 8001fca:	681b      	ldr	r3, [r3, #0]
+ 8001fcc:	681a      	ldr	r2, [r3, #0]
+ 8001fce:	687b      	ldr	r3, [r7, #4]
+ 8001fd0:	681b      	ldr	r3, [r3, #0]
+ 8001fd2:	f422 4200 	bic.w	r2, r2, #32768	; 0x8000
+ 8001fd6:	601a      	str	r2, [r3, #0]
+
   /* Get PCLK1 frequency */
   pclk1 = HAL_RCC_GetPCLK1Freq();
  8002e40:	f000 fd18 	bl	8003874 <HAL_RCC_GetPCLK1Freq>
