@@ -50,10 +50,10 @@ typedef struct Position
 typedef enum
 {
 	NoWall = 0,
-	North=128,
-	South=8,
-	East=2,
-	West=32
+	North=8,   // 00001000
+	East=4,    // 00000100
+	South=2,   // 00000010
+	West=1     // 00000001
 }Wall;
 
 

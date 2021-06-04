@@ -4,9 +4,7 @@
  *  Created on: May 24, 2021
  *      Author: Piotr
  */
-
 #include "maze.h"
-
 
 
 // MAZE init
@@ -87,9 +85,4 @@ Wall Maze_isEdge(uint8_t _x, uint8_t _y)
 
 	return TempWall;
 }
-
-
-
-
-
 
