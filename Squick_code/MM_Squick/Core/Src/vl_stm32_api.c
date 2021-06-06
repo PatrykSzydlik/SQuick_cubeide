@@ -8,6 +8,10 @@
 #include "vl_stm32_api.h"
 
 
+uint8_t Data = 0;
+uint8_t VL_mapping[3] = {2,0,4}; // TESTOWO
+
+
 /* Brute RESET */
 /*
 void VL_Reset(VL53L0X_DEV dev)
@@ -194,6 +198,10 @@ uint8_t VL_get_measurement_if_ready(VL53L0X_DEV dev, int16_t* distance)
 			return 0;
 	}
 	return 1;
+}
+
+uint8_t VL_start_measurement_non_blocking(VL53L0X_DEV dev){
+    return VL53L0X_StartMeasurement(dev);
 }
 
 

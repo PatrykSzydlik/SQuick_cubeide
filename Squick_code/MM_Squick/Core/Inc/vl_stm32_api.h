@@ -47,5 +47,8 @@ uint8_t VL_get_measurement_if_ready(VL53L0X_DEV dev, int16_t* distance);
 /* Block if out of range */
 uint8_t VL_single_measurement_blocking(VL53L0X_DEV dev, int16_t* distance);
 
+/* Enable addres initialization*/
+void VL_Enable(uint8_t VL_Index);
+
 
 #endif /* API_VL53L0X_VL_STM32_API_H_ */

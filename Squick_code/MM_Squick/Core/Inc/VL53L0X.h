@@ -38,6 +38,7 @@ typedef struct
 } vl_struct;
 
 extern vl_struct VLS;
+extern uint8_t VL_Data_Ready[3];
 extern uint8_t VL_Data_Updated[3];
 
 uint8_t VL_Init_All();

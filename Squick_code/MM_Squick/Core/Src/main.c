@@ -22,17 +22,22 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "pid.h"
+#include "VL53L0X.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+struct encoder{
+	int curr_speed; // mm/s *10
+	int absolute_pos; // mm *10
+};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MOTOR_MAX 999
+#define MOTOR_MAX 9999
+#define ENC_ZERO 32768
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,20 +56,22 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim10;
+TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
 int pwm_value=0;
-
+volatile struct encoder ENC_L, ENC_P;
 
 int rozpocznij_pomiar=0;
 int prog=0;
 uint32_t pomiar[10];
 
 int debug=0;
-uint16_t Kp = 6, Kd = 5, Ki=3, Ni=10;
+
 uint16_t predkosc_zadana = 0;
 uint16_t zasilanie=0;
 
@@ -74,6 +81,17 @@ int transmission_request=0;
 
 uint8_t direction=0;
 volatile uint8_t rx_flag=0;
+volatile uint8_t vl_flag=0;
+volatile uint8_t timer_flag=0;
+volatile uint8_t adc_flag=0;
+volatile short speed_mm=0;
+volatile uint8_t option=0;
+volatile uint8_t initialization_encoders=0;
+volatile uint8_t direction_set[2]={0,0};
+volatile short kp=0,ki=0,kd=0;
+cpid_t pid_L, pid_P;
+
+volatile uint16_t adc_measurements[6];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,49 +106,51 @@ static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM10_Init(void);
+static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
 int _write(int file, uint8_t *ptr, int len){
 	HAL_UART_Transmit(&huart1, ptr, len, 100);
 	return  len;
 };
 
-void data_decrypt(){
-	if(bt_settings[0]==101){
-		prog=(pomiar[5]+pomiar[9])/2;
-		rozpocznij_pomiar=1;
-	}else{
-		rozpocznij_pomiar=0;
+int abs(int zmienna) {
+	if (zmienna < 0) {
+		zmienna = -zmienna;
 	};
-	if(bt_settings[2]==101){
-		debug=1;
-	}else{
-		debug=0;
-	};
-	predkosc_zadana=256*bt_settings[5]+bt_settings[4];
-	Kp=256*bt_settings[7]+bt_settings[6];
-	Ki=256*bt_settings[9]+bt_settings[8];
-	Ni=256*bt_settings[11]+bt_settings[10];
-	Kd=256*bt_settings[13]+bt_settings[12];
+	return zmienna;
 }
 
-void data_encrypt(){
 
-	bt_settings[0]=debug%256;
-	bt_settings[1]=debug/256;
-	bt_settings[2]=predkosc_zadana%256;
-	bt_settings[3]=predkosc_zadana/256;
-	bt_settings[4]=Kp%256;
-	bt_settings[5]=Kp/256;
-	bt_settings[6]=Ki%256;
-	bt_settings[7]=Ki/256;
-	bt_settings[8]=Ni%256;
-	bt_settings[9]=Ni/256;
-	bt_settings[10]=Kd%256;
-	bt_settings[11]=Kd/256;
-	bt_settings[12]=zasilanie%256;
-	bt_settings[13]=zasilanie/256;
-
+void read_encoders(){
+	printf("LEFT  :  POS[mm] : %d     VEL[mm/s] : %d  \r\n", ENC_L.absolute_pos/10, ENC_L.curr_speed/10);
+	printf("RIGHT :  POS[mm] : %d     VEL[mm/s] : %d  \r\n", ENC_P.absolute_pos/10, ENC_P.curr_speed/10);
 }
+
+
+
+void get_encoder_pos(){
+	int diff=0;
+	int pos_L=0, pos_P=0;
+	pos_L = htim2.Instance->CNT;
+	pos_P = htim3.Instance->CNT;
+	htim2.Instance->CNT = ENC_ZERO;
+	htim3.Instance->CNT = ENC_ZERO;
+
+
+	diff = pos_L - ENC_ZERO;
+	diff = diff*170/51;
+	ENC_L.absolute_pos -= diff;
+	ENC_L.curr_speed = - diff*463/10;
+
+	diff = pos_P - ENC_ZERO;
+	diff = diff*170/51;
+	ENC_P.absolute_pos += diff;
+	ENC_P.curr_speed = diff*463/10;
+}
+
+
+
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 
@@ -177,10 +197,94 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		if(bt_data=='d'){
 			direction='d';
 		}
-		printf("Received : %d \r\n", bt_data);
+		if(bt_data=='p'){
+			option='p';
+		}
+		if(bt_data=='m'){
+			option='m';
+		}
+		if(bt_data=='r'){
+			option='r';
+		}
+		if(bt_data=='z'){
+			option='z';
+		}
+		if(bt_data=='g'){
+			option='g';
+		}
+		if(bt_data=='0'){
+			speed_mm=0;
+		}
+		if(bt_data=='1'){
+			speed_mm=100;
+		}
+		if(bt_data=='2'){
+			speed_mm=200;
+		}
+		if(bt_data=='3'){
+			speed_mm=300;
+		}
+		if(bt_data=='4'){
+			speed_mm=400;
+		}
+		if(bt_data=='5'){
+			speed_mm=500;
+		}
+		if(bt_data=='6'){
+			speed_mm=600;
+		}
+		if(bt_data=='7'){
+			speed_mm=700;
+		}
+		if(bt_data=='8'){
+			speed_mm=800;
+		}
+		if(bt_data=='9'){
+			speed_mm=900;
+		}
+		if(bt_data=='c'){
+			option='Q';
+			kp++;
+		}
+		if(bt_data=='v'){
+			option='Q';
+			kp--;
+		}
+		if(bt_data=='b'){
+			option='Q';
+			ki++;
+		}
+		if(bt_data=='n'){
+			option='Q';
+			ki--;
+		}
+		if(bt_data=='m'){
+			option='Q';
+			kd++;
+		}
+		if(bt_data==','){
+			option='Q';
+			kd--;
+		}
 		HAL_UART_Receive_IT(&huart1, &bt_data, 1);
 	};
 
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim->Instance==TIM10){
+		get_encoder_pos();
+		if(initialization_encoders==0){
+			initialization_encoders=1;
+			ENC_P.absolute_pos=0;
+			ENC_L.absolute_pos=0;
+
+		}
+		timer_flag=1;
+	}
+	if(htim->Instance==TIM11){
+		adc_flag=1;
+	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -189,53 +293,121 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		pwm_value-=50;
 		printf("Kliknieto BUT_2  PWM = %d \r\n", pwm_value);
 	}
-
-	if(GPIO_Pin==BUT_1_Pin){
-		HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
-		pwm_value+=50;
-		printf("Kliknieto BUT_1  PWM = %d \r\n", pwm_value);
+	if(GPIO_Pin == VL_INT_L_Pin){  // left sensor
+		printf("LEWY READY \r\n");
+		VL_Data_Ready[0] = 1;
+		vl_flag=1;
+	}
+	if(GPIO_Pin == VL_INT_F_Pin){  // front sensor
+		printf("FRONT READY \r\n");
+		VL_Data_Ready[1] = 1;
+		vl_flag=1;
+	}
+	if(GPIO_Pin == VL_INT_R_Pin){  // right sensor
+		printf("PRAWY READY \r\n");
+		VL_Data_Ready[2] = 1;
+		vl_flag=1;
 	}
 }
 
-int abs(int zmienna) {
-	if (zmienna < 0) {
-		zmienna = -zmienna;
-	};
-	return zmienna;
-}
+
 
 void PWM(int lewy, int prawy) {
 	if (lewy >= 0) {
-		if (lewy > 999) {
-			lewy = 999;
+		if (lewy > MOTOR_MAX) {
+			lewy = MOTOR_MAX;
 		};
-		HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 1);
-		HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 0);
+		if(direction_set[0]!=1){
+			HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 1);
+			HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 0);
+			direction_set[0]=1;
+		}
 	} else if (lewy < 0) {
-		if (lewy < -999) {
-			lewy = -999;
+		if (lewy < -MOTOR_MAX) {
+			lewy = -MOTOR_MAX;
 		};
-		HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 0);
-		HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 1);
+		if(direction_set[0]!=2){
+			HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 0);
+			HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 1);
+			direction_set[0]=2;
+		}
+
 	};
 
 	if (prawy >= 0) {
-		if (prawy > 999) {
-			prawy = 999;
+		if (prawy > MOTOR_MAX) {
+			prawy = MOTOR_MAX;
 		};
-		HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 0);
-		HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 1);
+		if(direction_set[1]!=1){
+			HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 0);
+			HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 1);
+			direction_set[1]=1;
+		}
 	} else if (prawy < 0) {
-		if (prawy < -999) {
-			prawy = -999;
+		if (prawy < -MOTOR_MAX) {
+			prawy = -MOTOR_MAX;
 		};
-		HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 1);
-		HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 0);
+		if(direction_set[1]!=2){
+			HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 1);
+			HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 0);
+			direction_set[1]=2;
+		}
 	};
 
-	printf("Speeding left: %d  right: %d \r\n", lewy, prawy);
+	if(prawy==0 && lewy==0){
+		direction_set[1]=0;
+		direction_set[0]=0;
+		HAL_GPIO_WritePin(R_IN1_GPIO_Port, R_IN1_Pin, 1);
+		HAL_GPIO_WritePin(R_IN2_GPIO_Port, R_IN2_Pin, 1);
+		HAL_GPIO_WritePin(L_IN1_GPIO_Port, L_IN1_Pin, 1);
+		HAL_GPIO_WritePin(L_IN2_GPIO_Port, L_IN2_Pin, 1);
+
+	}
 	__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1, abs(lewy));
 	__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_2, abs(prawy));
+}
+
+
+void pos_and_speed_measurement(){
+	PWM(speed_mm, speed_mm);
+	for(int i=0; i<10; i++){
+		HAL_Delay(100);
+		read_encoders();
+	}
+	PWM(0,0);
+
+
+}
+
+void initialize_PID(short k_p, short k_i, short k_d){
+	  //Regulator został nastrojony przy pomocy metody ręcznej
+	  // Najpierw zmieniając Kp aż do wystąpienia oscylacji i wybrać polowe wartosci
+	  // Potem ustalając Ki az do skrocenia czasu regulacji
+	  // Na koncu regulacja Kd
+
+	  pid_init(&pid_L, kp*0.1f, ki*0.01f, kd*0.01f, 4, 40);  // 10ms ze wzgledu na 25Hz
+	  pid_L.p_max = pid_scale(&pid_L, MOTOR_MAX);
+	  pid_L.p_min = pid_scale(&pid_L, -MOTOR_MAX);
+	  pid_L.i_max = pid_scale(&pid_L, MOTOR_MAX);
+	  pid_L.i_min = pid_scale(&pid_L, -MOTOR_MAX);
+	  pid_L.d_max = pid_scale(&pid_L, MOTOR_MAX);
+	  pid_L.d_min = pid_scale(&pid_L, -MOTOR_MAX);
+	  pid_L.total_max = pid_scale(&pid_L, MOTOR_MAX);
+	  pid_L.total_min = pid_scale(&pid_L, -MOTOR_MAX);
+
+	  //Regulator został nastrojony przy pomocy metody ręcznej
+	  // Najpierw zmieniając Kp aż do wystąpienia oscylacji i wybrać polowe wartosci
+	  // Potem ustalając Ki az do skrocenia czasu regulacji
+	  // Na koncu regulacja Kd
+	  pid_init(&pid_P, kp*0.1f, ki*0.01f, kd*0.01f, 4, 40);  // 40ms ze wzgledu na 25Hz
+	  pid_P.p_max = pid_scale(&pid_P, MOTOR_MAX);
+	  pid_P.p_min = pid_scale(&pid_P, -MOTOR_MAX);
+	  pid_P.i_max = pid_scale(&pid_P, MOTOR_MAX);
+	  pid_P.i_min = pid_scale(&pid_P, -MOTOR_MAX);
+	  pid_P.d_max = pid_scale(&pid_P, MOTOR_MAX);
+	  pid_P.d_min = pid_scale(&pid_P, -MOTOR_MAX);
+	  pid_P.total_max = pid_scale(&pid_P, MOTOR_MAX);
+	  pid_P.total_min = pid_scale(&pid_P, -MOTOR_MAX);
 }
 
 /* USER CODE END PFP */
@@ -252,7 +424,7 @@ void PWM(int lewy, int prawy) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	int L_pwm_pid=0, P_pwm_pid=0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -282,6 +454,8 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM10_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
   __HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1, 0 );
   __HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_2, 0 );
@@ -295,33 +469,90 @@ int main(void)
   HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
   HAL_UART_Receive_IT(&huart1, &bt_data, 1);
+  VL_Init_All(&hi2c1);
+  HAL_TIM_Base_Start_IT(&htim10);
+  HAL_TIM_Base_Start_IT(&htim11);
+  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  htim2.Instance->CNT = ENC_ZERO;
+  htim3.Instance->CNT = ENC_ZERO;
+
+  initialize_PID(kp, ki, kd);
+
+  HAL_ADC_Start_DMA(&hadc1, adc_measurements, 6);
+
   /* USER CODE END 2 */
 
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(rx_flag==1){
-		  switch(direction){
-		  case 'w':
-			  printf("WHY??\r\n");
-			  PWM(600,600);
-			  break;
-		  case 'a':
-			  printf("WHY THO???\r\n");
-			  PWM(-600,600);
-			  break;
-		  case 's':
-			  printf("WUT?!\r\n");
-			  PWM(-600,-600);
-			  break;
-		  case 'd':
-			  printf("JUST WHY?\r\n");
-			  PWM(600,-600);
-			  break;
-		  }
-		  HAL_Delay(300);
-		  printf("Stopping\r\n");
-		  PWM(0,0);
-		  rx_flag=0;
+	  if(adc_measurements[0]<2700){
+		  HAL_Delay(1000);
+		  HAL_GPIO_TogglePin(LED_3_GPIO_Port, LED_3_Pin);
+	  }else{
+		  if(timer_flag==1){
+		  		  timer_flag=0;
+		  		  L_pwm_pid = pid_calc(&pid_L, ENC_L.curr_speed, speed_mm*10);
+		  		  P_pwm_pid = pid_calc(&pid_P, ENC_P.curr_speed, speed_mm*10);
+		  		  if(option=='g'){
+		  			  printf("SET: %d     MEAS:  %d     RES:  %d \r\n", speed_mm*10, ENC_L.curr_speed, L_pwm_pid );
+		  			  PWM(speed_mm*10+L_pwm_pid, speed_mm*10+P_pwm_pid);
+		  		  }
+		  	  }
+		  	  if(rx_flag==1){
+		  		  switch(direction){
+		  		  case 'w':
+		  			  PWM(8000,8000);
+		  			  break;
+		  		  case 'a':
+		  			  PWM(-4000,4000);
+		  			  break;
+		  		  case 's':
+		  			  PWM(-8000,-8000);
+		  			  break;
+		  		  case 'd':
+		  			  PWM(4000,-4000);
+		  			  break;
+
+		  		  }
+		  		  if(direction != ' '){
+		  			  HAL_Delay(100);
+		  			  printf("Stopping\r\n");
+		  			  PWM(0,0);
+		  			  direction=' ';
+		  		  }
+
+		  		  switch(option){
+		  		  case 'p':
+		  			  read_encoders();
+		  			  option=' ';
+		  			  break;
+		  		  case 'Q':
+		  			  printf("Kp %d  Ki  %d  Kd  %d \r\n", kp, ki, kd );
+		  			  initialize_PID(kp, ki, kd);
+		  			  break;
+		  		  case 'z':
+		  			  ENC_L.absolute_pos=0;
+		  			  ENC_P.absolute_pos=0;
+		  			  option=' ';
+		  			  break;
+		  		  case 'm':
+		  			  pos_and_speed_measurement();
+		  			  option=' ';
+		  			  break;
+		  		  case 'r':
+		  			  PWM(speed_mm*10, speed_mm*10);
+		  			  option=' ';
+		  			  break;
+		  		  case 'g':
+		  			  break;
+		  		  }
+		  		  rx_flag=0;
+		  	  }
 	  }
   }
   /* USER CODE END 3 */
@@ -391,7 +622,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ENABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
@@ -399,8 +630,8 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.NbrOfConversion = 6;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
@@ -410,7 +641,47 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_15;
+  sConfig.Rank = 2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Rank = 3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_3;
+  sConfig.Rank = 4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = 5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = 6;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -514,9 +785,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 48;
+  htim1.Init.Prescaler = 24;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 999;
+  htim1.Init.Period = 9999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -591,20 +862,20 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9999;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_DOWN;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 15;
+  sConfig.IC1Filter = 2;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 15;
+  sConfig.IC2Filter = 2;
   if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -649,11 +920,11 @@ static void MX_TIM3_Init(void)
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 2;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 2;
   if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -667,6 +938,68 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM10 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM10_Init(void)
+{
+
+  /* USER CODE BEGIN TIM10_Init 0 */
+
+  /* USER CODE END TIM10_Init 0 */
+
+  /* USER CODE BEGIN TIM10_Init 1 */
+
+  /* USER CODE END TIM10_Init 1 */
+  htim10.Instance = TIM10;
+  htim10.Init.Prescaler = 1999;
+  htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim10.Init.Period = 999;
+  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM10_Init 2 */
+
+  /* USER CODE END TIM10_Init 2 */
+
+}
+
+/**
+  * @brief TIM11 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM11_Init(void)
+{
+
+  /* USER CODE BEGIN TIM11_Init 0 */
+
+  /* USER CODE END TIM11_Init 0 */
+
+  /* USER CODE BEGIN TIM11_Init 1 */
+
+  /* USER CODE END TIM11_Init 1 */
+  htim11.Instance = TIM11;
+  htim11.Init.Prescaler = 4799;
+  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim11.Init.Period = 9999;
+  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM11_Init 2 */
+
+  /* USER CODE END TIM11_Init 2 */
 
 }
 
@@ -769,8 +1102,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, PT_A_Pin|PT_B_Pin|PT_C_Pin|VL_XSHUT_Pin
-                          |L_IN1_Pin|L_IN2_Pin|IMU_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, PT_A_Pin|PT_B_Pin|PT_C_Pin|VL_XSHUT_R_Pin
+                          |L_IN1_Pin|L_IN2_Pin|VL_XSHUT_L_Pin|VL_XSHUT_F_Pin
+                          |IMU_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED_3_Pin|LED_2_Pin|LED_1_Pin|IR_C_Pin
@@ -779,32 +1113,33 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, R_IN2_Pin|R_IN1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PT_A_Pin PT_B_Pin PT_C_Pin VL_XSHUT_Pin
-                           L_IN1_Pin L_IN2_Pin IMU_CS_Pin */
-  GPIO_InitStruct.Pin = PT_A_Pin|PT_B_Pin|PT_C_Pin|VL_XSHUT_Pin
-                          |L_IN1_Pin|L_IN2_Pin|IMU_CS_Pin;
+  /*Configure GPIO pins : PT_A_Pin PT_B_Pin PT_C_Pin */
+  GPIO_InitStruct.Pin = PT_A_Pin|PT_B_Pin|PT_C_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BUT_1_Pin */
   GPIO_InitStruct.Pin = BUT_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BUT_1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : VL_INT_R_Pin */
-  GPIO_InitStruct.Pin = VL_INT_R_Pin;
+  /*Configure GPIO pins : VL_INT_R_Pin VL_INT_F_Pin VL_INT_L_Pin */
+  GPIO_InitStruct.Pin = VL_INT_R_Pin|VL_INT_F_Pin|VL_INT_L_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(VL_INT_R_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : VL_INT_L_Pin */
-  GPIO_InitStruct.Pin = VL_INT_L_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pins : VL_XSHUT_R_Pin L_IN1_Pin L_IN2_Pin VL_XSHUT_L_Pin
+                           VL_XSHUT_F_Pin IMU_CS_Pin */
+  GPIO_InitStruct.Pin = VL_XSHUT_R_Pin|L_IN1_Pin|L_IN2_Pin|VL_XSHUT_L_Pin
+                          |VL_XSHUT_F_Pin|IMU_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(VL_INT_L_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_3_Pin LED_2_Pin LED_1_Pin */
   GPIO_InitStruct.Pin = LED_3_Pin|LED_2_Pin|LED_1_Pin;
@@ -816,7 +1151,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : IR_C_Pin IR_B_Pin IR_A_Pin */
   GPIO_InitStruct.Pin = IR_C_Pin|IR_B_Pin|IR_A_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -840,8 +1175,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(IMU_INT_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);

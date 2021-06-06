@@ -1,7 +1,7 @@
-maze.c:22:6:Maze_FloodFill	0	static
-maze.c:27:6:Maze_AddWall	0	static
-maze.c:59:6:Maze_ResetCosts	8	static
-maze.c:73:9:Maze_is_Wall	0	static
-maze.c:80:6:Maze_isEdge	0	static
-maze.c:35:6:Maze_ResetWalls	16	static
-maze.c:13:6:Maze_Init	8	static
+maze.c:20:6:Maze_FloodFill	0	static
+maze.c:25:6:Maze_AddWall	0	static
+maze.c:57:6:Maze_ResetCosts	8	static
+maze.c:71:9:Maze_is_Wall	0	static
+maze.c:78:6:Maze_isEdge	0	static
+maze.c:33:6:Maze_ResetWalls	16	static
+maze.c:11:6:Maze_Init	8	static
