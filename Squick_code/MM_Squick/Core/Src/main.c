@@ -200,8 +200,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		if(bt_data=='p'){
 			option='p';
 		}
-		if(bt_data=='m'){
-			option='m';
+		if(bt_data==']'){
+			option=']';
 		}
 		if(bt_data=='r'){
 			option='r';
@@ -211,6 +211,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if(bt_data=='g'){
 			option='g';
+		}
+		if(bt_data=='k'){
+			option='k';
 		}
 		if(bt_data=='0'){
 			speed_mm=0;
@@ -369,7 +372,7 @@ void PWM(int lewy, int prawy) {
 
 
 void pos_and_speed_measurement(){
-	PWM(speed_mm, speed_mm);
+	PWM(speed_mm*10, speed_mm*10);
 	for(int i=0; i<10; i++){
 		HAL_Delay(100);
 		read_encoders();
@@ -410,6 +413,86 @@ void initialize_PID(short k_p, short k_i, short k_d){
 	  pid_P.total_min = pid_scale(&pid_P, -MOTOR_MAX);
 }
 
+void PT_change_sensor(uint8_t sensor){
+	if(sensor==0){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(sensor==1){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(sensor==2){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(sensor==3){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(sensor==4){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(sensor==5){
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_SET);
+	}
+	else{
+		HAL_GPIO_WritePin(PT_A_GPIO_Port, PT_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_B_GPIO_Port, PT_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PT_C_GPIO_Port, PT_C_Pin, GPIO_PIN_SET);
+	}
+}
+
+void IR_set(uint8_t diode){
+	if(diode==0){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(diode==1){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(diode==2){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(diode==3){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(diode==4){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_RESET);
+	}
+	else if(diode==5){
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_SET);
+	}
+	else{
+		HAL_GPIO_WritePin(IR_A_GPIO_Port, IR_A_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_B_GPIO_Port, IR_B_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(IR_C_GPIO_Port, IR_C_Pin, GPIO_PIN_SET);
+	}
+}
+
+void IR_reset(){
+	IR_set(99);
+}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -425,6 +508,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	int L_pwm_pid=0, P_pwm_pid=0;
+	uint8_t sensor;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -490,6 +574,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if(adc_flag==1){
+
+		  adc_flag=0;
+	  }
 	  if(adc_measurements[0]<2700){
 		  HAL_Delay(1000);
 		  HAL_GPIO_TogglePin(LED_3_GPIO_Port, LED_3_Pin);
@@ -527,6 +615,21 @@ int main(void)
 		  		  }
 
 		  		  switch(option){
+		  		case 'k':
+					  sensor = speed_mm/100;
+					  printf("Measuring IR %d sensor value .... \r\n", sensor);
+					  PT_change_sensor(sensor);
+					  IR_set(sensor);
+					  HAL_Delay(250);
+					  printf("ADC MEASUREMENTS \r\n");
+					  printf(" Batt : %d \r\n", adc_measurements[0]);
+					  printf(" KTIR_1 : %d \r\n", adc_measurements[1]);
+					  printf(" KTIR_2 : %d \r\n", adc_measurements[2]);
+					  printf(" KTIR_3 : %d \r\n", adc_measurements[3]);
+					  printf(" KTIR_4 : %d \r\n", adc_measurements[4]);
+					  printf(" IR sensor : %d \r\n", adc_measurements[5]);
+					  option=' ';
+					  break;
 		  		  case 'p':
 		  			  read_encoders();
 		  			  option=' ';
@@ -540,7 +643,7 @@ int main(void)
 		  			  ENC_P.absolute_pos=0;
 		  			  option=' ';
 		  			  break;
-		  		  case 'm':
+		  		  case ']':
 		  			  pos_and_speed_measurement();
 		  			  option=' ';
 		  			  break;
