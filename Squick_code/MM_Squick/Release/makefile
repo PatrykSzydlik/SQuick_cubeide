@@ -43,6 +43,11 @@ endif
 
 -include ../makefile.defs
 
+BUILD_ARTIFACT_NAME := MM_Squick
+BUILD_ARTIFACT_EXTENSION := elf
+BUILD_ARTIFACT_PREFIX := 
+BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME).$(BUILD_ARTIFACT_EXTENSION)
+
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
 MM_Squick.elf \
@@ -58,11 +63,14 @@ MM_Squick.bin \
 
 
 # All Target
-all: MM_Squick.elf secondary-outputs
+all: main-build
+
+# Main-build Target
+main-build: MM_Squick.elf secondary-outputs
 
 # Tool invocations
-MM_Squick.elf: $(OBJS) $(USER_OBJS) C:\Users\patry\Desktop\MM\ Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld
-	arm-none-eabi-g++ -o "MM_Squick.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\patry\Desktop\MM Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MM_Squick.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+MM_Squick.elf: $(OBJS) $(USER_OBJS) C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld
+	arm-none-eabi-g++ -o "MM_Squick.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Piotr\Desktop\6sem\Squick\squick_cubeide\Squick_code\MM_Squick\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MM_Squick.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -88,7 +96,14 @@ clean:
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
-.PHONY: all clean dependents
+fail-specified-linker-script-missing:
+	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'
+	@exit 2
+
+warn-no-linker-script-specified:
+	@echo 'Warning: No linker script specified. Check the linker settings in the build configuration.'
+
+.PHONY: all clean dependents fail-specified-linker-script-missing warn-no-linker-script-specified
 .SECONDARY:
 
 -include ../makefile.targets

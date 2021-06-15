@@ -91,7 +91,14 @@ volatile uint8_t direction_set[2]={0,0};
 volatile short kp=0,ki=0,kd=0;
 cpid_t pid_L, pid_P;
 
+vl_struct VLS;
+VL53L0X_DEV dev;
+
 volatile uint16_t adc_measurements[6];
+
+int16_t VLdistanceL=0;
+int16_t VLdistanceF=0;
+int16_t VLdistanceR=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -268,6 +275,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		if(bt_data==','){
 			option='Q';
 			kd--;
+		}
+		if(bt_data=='='){
+			option='=';
 		}
 		HAL_UART_Receive_IT(&huart1, &bt_data, 1);
 	};
@@ -593,20 +603,18 @@ int main(void)
 		  	  }
 		  	  if(rx_flag==1){
 		  		  switch(direction){
-		  		 case 'w':
-					  PWM(speed_mm*10,speed_mm*10);
-					  break;
-				  case 'a':
-					  PWM(-speed_mm*6,speed_mm*6);
-					  break;
-				  case 's':
-					  PWM(-speed_mm*10,-speed_mm*10);
-					  break;
-				  case 'd':
-					  PWM(speed_mm*6,-speed_mm*6);
-					  break;
-
-
+					 case 'w':
+						  PWM(speed_mm*10,speed_mm*10);
+						  break;
+					  case 'a':
+						  PWM(-speed_mm*6,speed_mm*6);
+						  break;
+					  case 's':
+						  PWM(-speed_mm*10,-speed_mm*10);
+						  break;
+					  case 'd':
+						  PWM(speed_mm*6,-speed_mm*6);
+						  break;
 		  		  }
 		  		  if(direction != ' '){
 		  			  HAL_Delay(100);
@@ -652,6 +660,13 @@ int main(void)
 		  			  PWM(speed_mm*10, speed_mm*10);
 		  			  option=' ';
 		  			  break;
+		  		  case '=':
+		  			f_SH_ClearMemory(VLS.MEMORY);
+		  			printf("Clear memory VL\r\n");
+		  			VL_Check();
+		  			VL_single_measurement_blocking(dev, VLdistanceL);
+		  			printf("VL_L: %d %d \r\n", VLS.MEMORY[0], VLS.STATE[0]);
+		  			break;
 		  		  case 'g':
 		  			  break;
 		  		  }
