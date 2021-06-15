@@ -593,18 +593,19 @@ int main(void)
 		  	  }
 		  	  if(rx_flag==1){
 		  		  switch(direction){
-		  		  case 'w':
-		  			  PWM(8000,8000);
-		  			  break;
-		  		  case 'a':
-		  			  PWM(-4000,4000);
-		  			  break;
-		  		  case 's':
-		  			  PWM(-8000,-8000);
-		  			  break;
-		  		  case 'd':
-		  			  PWM(4000,-4000);
-		  			  break;
+		  		 case 'w':
+					  PWM(speed_mm*10,speed_mm*10);
+					  break;
+				  case 'a':
+					  PWM(-speed_mm*6,speed_mm*6);
+					  break;
+				  case 's':
+					  PWM(-speed_mm*10,-speed_mm*10);
+					  break;
+				  case 'd':
+					  PWM(speed_mm*6,-speed_mm*6);
+					  break;
+
 
 		  		  }
 		  		  if(direction != ' '){
